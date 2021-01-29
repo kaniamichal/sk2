@@ -10,57 +10,59 @@ import java.util.logging.Level;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.ListModel;
 
 /**
  *
  * @author Michał
  */
 public class Clients extends javax.swing.JFrame {
+
     String iD, idClients = "";
     DataInputStream dataInput;
     DataOutputStream dataOutput;
-    DefaultListModel defaultListModel;
-    
+    DefaultListModel<String> defaultListModel;
+
     public Clients() {
         initComponents();
     }
 
     Clients(String id, Socket socket) {
-        iD = id;
-        try{
-            initComponents(); 
-            defaultListModel = new DefaultListModel();
-           // defaultListModel.addElement(id);- dodaje do listy nazwę usera, ale tylko tego co się loguje
+        this.iD = id;
+        try {
+            initComponents();
+            defaultListModel = new DefaultListModel<String>();
             UL.setModel(defaultListModel);
             labelClientsConnect.setText(id);
             dataInput = new DataInputStream(socket.getInputStream());
             dataOutput = new DataOutputStream(socket.getOutputStream());
             new Read().start();
-        }
-        catch(Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
- 
+
     class Read extends Thread {
 
+        @Override
         public void run() {
             while (true) {
                 try {
                     String text = dataInput.readUTF();
-                    if (!text.contains(":;.,/=?")) {
+                    if (text.contains(":;.,/=")) {
                         text = text.substring(6);
                         defaultListModel.clear();
                         StringTokenizer stringtokenizer = new StringTokenizer(text, ",");
                         while (stringtokenizer.hasMoreTokens()) {
                             String user = stringtokenizer.nextToken();
-                            if (iD.equals(user)) {
+                            if (!iD.equals(user)) {
                                 defaultListModel.addElement(user);
                             }
                         }
                     } else {
                         msgTextArea.append("" + text + "\n");
                     }
+
                 } catch (Exception ex) {
                     ex.printStackTrace();
                     break;
@@ -98,6 +100,7 @@ public class Clients extends javax.swing.JFrame {
         JLabelClientInfo.setText("Cześć:");
 
         labelClientsConnect.setFont(new java.awt.Font("Tahoma", 1, 24)); // NOI18N
+        labelClientsConnect.setForeground(new java.awt.Color(255, 0, 0));
         labelClientsConnect.setText(".............................");
 
         SelectAllBtn.setText("Zaznacz wszystkich");
@@ -119,6 +122,11 @@ public class Clients extends javax.swing.JFrame {
             }
         });
 
+        UL.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                ULMouseClicked(evt);
+            }
+        });
         jScrollPane3.setViewportView(UL);
 
         javax.swing.GroupLayout JPanelClientsLayout = new javax.swing.GroupLayout(JPanelClients);
@@ -133,25 +141,24 @@ public class Clients extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addGroup(JPanelClientsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(JPanelClientsLayout.createSequentialGroup()
-                        .addComponent(JLabelClientInfo)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(labelClientsConnect, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(JPanelClientsLayout.createSequentialGroup()
                         .addComponent(msgTextField, javax.swing.GroupLayout.PREFERRED_SIZE, 383, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(27, 27, 27)
                         .addComponent(sendBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane1))
+                    .addComponent(jScrollPane1)
+                    .addGroup(JPanelClientsLayout.createSequentialGroup()
+                        .addComponent(JLabelClientInfo)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(labelClientsConnect, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(34, 34, 34))
         );
         JPanelClientsLayout.setVerticalGroup(
             JPanelClientsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(JPanelClientsLayout.createSequentialGroup()
-                .addGap(22, 22, 22)
+                .addGap(59, 59, 59)
                 .addGroup(JPanelClientsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(SelectAllBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(JLabelClientInfo)
                     .addComponent(labelClientsConnect, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(1, 1, 1)
-                .addComponent(SelectAllBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(JPanelClientsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(JPanelClientsLayout.createSequentialGroup()
@@ -178,26 +185,20 @@ public class Clients extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void formWindowsClosing(java.awt.event.WindowEvent evt){
-        String i ="mkoihgteazdcvgyhujb096785542AXTY";
+    private void formWindowsClosing(java.awt.event.WindowEvent evt) {
+        String i = "mkoihgteazdcvgyhujb096785542AXTY";
         try {
             dataOutput.writeUTF(i);
             this.dispose();
-        } catch (IOException ex){
+        } catch (IOException ex) {
             Logger.getLogger(Clients.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    private void UserListValueChanged(javax.swing.event.ListSelectionEvent evt){
-        defaultListModel.addElement(idClients);
-        idClients=(String)UL.getSelectedValue();
-        
-    }
-    
-    
+
     private void sendBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendBtnActionPerformed
         try {
             String msg = msgTextField.getText(), mm = msg;
+            //   UserListValueChanged();
             String CI = idClients;
 
             if (!idClients.isEmpty()) {
@@ -205,11 +206,10 @@ public class Clients extends javax.swing.JFrame {
                 dataOutput.writeUTF(msg);
                 msgTextField.setText("");
                 msgTextArea.append("< YOU send to " + CI + " > " + mm + "\n");
-            } 
-            else {
+            } else {
                 dataOutput.writeUTF(msg);
                 msgTextField.setText("");
-                msgTextArea.append("< YOY to ALL > " + mm + "\n");
+                msgTextArea.append("< YOU to ALL > " + mm + "\n");
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Wybrany użytkownik nie istniejje");
@@ -217,8 +217,12 @@ public class Clients extends javax.swing.JFrame {
     }//GEN-LAST:event_sendBtnActionPerformed
 
     private void SelectAllBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SelectAllBtnActionPerformed
-        idClients="";
+        idClients = "";
     }//GEN-LAST:event_SelectAllBtnActionPerformed
+
+    private void ULMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ULMouseClicked
+        idClients = (String) UL.getSelectedValue();
+    }//GEN-LAST:event_ULMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
